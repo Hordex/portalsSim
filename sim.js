@@ -19,6 +19,11 @@ SimObject.prototype.Move = function(moveVector){
     this.bDirty = true;
 }
 
+SimObject.prototype.Teleport = function(newPosition){
+    this.Position = newPosition;
+    this.bDirty = true;
+}
+
 SimObject.prototype.Rotate = function(rotor){
     this.Rotation += rotor;
     this.bDirty = true;
@@ -73,4 +78,5 @@ Player.prototype.constructor = Player;
 SimulationState.prototype.Init = function(inScenario){
     SimulationState.call(this);
     this.Scenario = inScenario;
+    this.Player = new Player(new Point(Math.random()*0.5 + 0.25,Math.random()*0.5 + 0.25));
 }

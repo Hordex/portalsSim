@@ -60,7 +60,19 @@ function ScenarioGenerator(staffOrder, northSafePortal, southSafePortal, playerR
 
     if(this.PlayerRotation === Rotations.cw){ // NORTH
         if(this.PlayerDirection === PortalDirections.east){
-
+            this.PlayerBait1 = BaitPositionCalls.northOut;
+            this.PlayerBait2 = BaitPositionCalls.northIn;
+        } else {
+            this.PlayerBait1 = BaitPositionCalls.northIn;
+            this.PlayerBait2 = BaitPositionCalls.northOut;
+        }
+    } else { // SOUTH
+        if(this.PlayerDirection === PortalDirections.east){
+            this.PlayerBait1 = BaitPositionCalls.southOut;
+            this.PlayerBait2 = BaitPositionCalls.southIn;
+        } else {
+            this.PlayerBait1 = BaitPositionCalls.southIn;
+            this.PlayerBait2 = BaitPositionCalls.southOut;
         }
     }
 
