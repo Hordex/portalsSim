@@ -8,8 +8,9 @@ let SimSettings = {
     playerSpeed:1,
     playerDiameter:0.2,
     laserOffset: 0.1,
-    portalRotaionDiameter: 0.5,
-    playerRotationDiameter: 0.4
+    portalRotaionDiameter: 0.8,
+    playerRotationDiameter: 0.6,
+    portalBridgeHeight: 0.15
 }
 
 let Moves = {

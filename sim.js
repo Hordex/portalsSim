@@ -89,8 +89,8 @@ function Player(position){
 Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
 
-Player.prototype.AddPortal = function(direction){
-    this.PersonalPortal = new Portal(this.Position,direction,true);
+Player.prototype.AddPortal = function(direction,rotation){
+    this.PersonalPortal = new Portal(this.Position,direction,true,rotation);
 }
 
 Player.prototype.Move = function(moveVector){
@@ -105,8 +105,9 @@ Player.prototype.Teleport = function(newPosition){
 
 // === Portal
 
-function Portal(position,direction,InbPlayer){
+function Portal(position,direction,InbPlayer,mechanic){
     Circle.call(this,position,SimSettings.portalDiameter/2);
+    this.Mechanic = mechanic === Rotations.cw ? mechanic : Rotations.ccw;
     if(direction === PortalDirections.east){
         this.Offset = new Point(1,0);
     } else {
@@ -114,6 +115,8 @@ function Portal(position,direction,InbPlayer){
     }
     this.bPlayer = InbPlayer;
     this.LinkedEndpoint = new Circle(position.Add(this.Offset),SimSettings.portalDiameter/2);
+    this.Bridge = new SimObject(new Point(0,0),0);
+    this.MechanicMarker = new SimObject(new Point(0,0),0);
 }
 
 Portal.prototype = Object.create(Circle.prototype);
@@ -139,7 +142,7 @@ SimulationState.prototype.Init = function(inScenario){
     SimulationState.call(this);
     this.Scenario = inScenario;
     this.Player = new Player(new Point(SimSettings.arenaWidth,SimSettings.arenaHeight).Multiply(Math.random()*0.5 + 0.25));
-    this.Player.AddPortal(inScenario.PlayerDirection);
+    this.Player.AddPortal(inScenario.PlayerDirection, inScenario.PlayerRotation);
     this.Bots = [
         new Character(new Point(0,0)),
         new Character(new Point(0,SimSettings.arenaHeight)),

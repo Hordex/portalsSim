@@ -94,30 +94,76 @@ function SetPosition(inSimObject){
     object.style.left = (SimSettings.unitSize * inSimObject.Position.X + inSimObject.RenderOffsetX) + "px";
 }
 
+function CreateBaseRenderObject(inSimObject){
+    let renderObject = document.createElement("div");
+    renderObject.style.position = "absolute";
+    renderObject.style.backgroundSize = "contain";
+    renderObject.id = inSimObject.ID;
+    return renderObject;
+}
+
+function CreatePortalRenderState(inPortal,zTranslate){
+    let portalrenderOffset = -SimSettings.portalDiameter * SimSettings.unitSize / 2;
+    let PortalBody = CreateBaseRenderObject(inPortal);
+    let PortalBridge = CreateBaseRenderObject(inPortal.Bridge);
+    PortalBridge.style.backgroundImage = "url('bridge.png')";
+    PortalBridge.style.width = (SimSettings.unitSize * inPortal.Offset.Length()) + "px";
+    PortalBridge.style.height = (SimSettings.unitSize * SimSettings.portalBridgeHeight) + "px";
+    let bridgeRotation = inPortal.Offset.X < 0 ? "rotate(180deg)" : "" ;
+    PortalBridge.style.transform = "translateZ("+ (zTranslate - 15) + "px)" + bridgeRotation;
+    PortalBridge.style.zIndex = 10;
+    let bridgeOffsetX = inPortal.Offset.X < 0 ? - SimSettings.unitSize : 0;
+    PortalBridge.style.left = (-portalrenderOffset + bridgeOffsetX) + "px";
+    PortalBridge.style.top = (-portalrenderOffset - SimSettings.unitSize * SimSettings.portalBridgeHeight / 2) + "px";
+    PortalBody.appendChild(PortalBridge);
+    let PortalEndPoint = CreateBaseRenderObject(inPortal.LinkedEndpoint);
+    PortalEndPoint.style.backgroundImage = PortalBody.style.backgroundImage = "url('portal.png')";
+    PortalEndPoint.style.left = (SimSettings.unitSize * inPortal.Offset.X) + "px";
+    PortalBody.appendChild(PortalEndPoint);
+    PortalEndPoint.style.width = PortalEndPoint.style.height = PortalBody.style.width = PortalBody.style.height = (SimSettings.unitSize * SimSettings.portalDiameter) + "px";
+    PortalBody.style.zIndex = PortalEndPoint.style.zIndex = 50;
+    PortalBody.style.transform = PortalEndPoint.style.transform = "translateZ(" + zTranslate + "px)";
+    PortalBody.style.transformStyle = "preserve-3d";
+    let MechanicMarker = CreateBaseRenderObject(inPortal.MechanicMarker);
+    MechanicMarker.style.width  = MechanicMarker.style.height = (SimSettings.portalRotaionDiameter * SimSettings.unitSize) + "px";
+    MechanicMarker.style.zIndex = 25;
+    MechanicMarker.style.transform = "translateZ(" + (zTranslate - 5) + "px)";
+    MechanicMarker.style.backgroundImage = "url('" +  (inPortal.Mechanic === Rotations.cw ? "arrow-circle-orange.png" : "arrow-circle-blue.png") + "')";
+    MechanicMarker.style.top = (-portalrenderOffset - SimSettings.portalRotaionDiameter * SimSettings.unitSize /2) +"px";
+    MechanicMarker.style.left = (-portalrenderOffset - SimSettings.portalRotaionDiameter * SimSettings.unitSize /2) +"px";
+    PortalBody.appendChild(MechanicMarker);
+    return PortalBody;
+}
+
 function CreateRenderState(inSimulationState){
     let container = GetObjectContainer();
 
     let palyerData = inSimulationState.Player;
-    let playerAvatar = document.createElement("div");
+    let playerAvatar = CreateBaseRenderObject(palyerData);
     palyerData.RenderOffsetX = -(SimSettings.unitSize * SimSettings.playerDiameter) / 2;
     palyerData.RenderOffsetY = -(SimSettings.unitSize * SimSettings.playerDiameter) / 2;
     playerAvatar.style.backgroundImage = "url('none.png')";
-    playerAvatar.style.position = "absolute";
     playerAvatar.style.width = playerAvatar.style.height = (SimSettings.unitSize * SimSettings.playerDiameter) + "px";
-    playerAvatar.style.backgroundSize = "contain";
-    playerAvatar.id = palyerData.ID;
     container.appendChild(playerAvatar);
+    let playerPortal = CreatePortalRenderState(palyerData.PersonalPortal,-10);
+    playerPortal.firstChild.style.backgroundImage = "url('bridge_player1.png')";
+    let portalrenderOffset = -SimSettings.portalDiameter * SimSettings.unitSize / 2;
+    playerPortal.style.left = playerPortal.style.top = (portalrenderOffset - palyerData.RenderOffsetX) + "px";
+    playerAvatar.appendChild(playerPortal);
+    playerAvatar.style.zIndex = 100;
+    playerAvatar.style.transformStyle = "preserve-3d";
+    let MechanicMarker = playerPortal.lastChild;
+    MechanicMarker.style.width  = MechanicMarker.style.height = (SimSettings.playerRotationDiameter * SimSettings.unitSize) + "px";
+    MechanicMarker.style.top = (-portalrenderOffset - SimSettings.playerRotationDiameter * SimSettings.unitSize /2) +"px";
+    MechanicMarker.style.left = (-portalrenderOffset - SimSettings.playerRotationDiameter * SimSettings.unitSize /2) +"px";
     SetPosition(palyerData);
 
     for (Bot of inSimulationState.Bots) {
-        let BotAvatar = document.createElement("div");
+        let BotAvatar = CreateBaseRenderObject(Bot);
         Bot.RenderOffsetX = -(SimSettings.unitSize * SimSettings.playerDiameter) / 2;
         Bot.RenderOffsetY = -(SimSettings.unitSize * SimSettings.playerDiameter) / 2;
         BotAvatar.style.backgroundImage = "url('ENpcResident.png')";
-        BotAvatar.style.position = "absolute";
         BotAvatar.style.width = BotAvatar.style.height = (SimSettings.unitSize * SimSettings.playerDiameter) + "px";
-        BotAvatar.style.backgroundSize = "contain";
-        BotAvatar.id = Bot.ID;
         container.appendChild(BotAvatar);
         SetPosition(Bot);
     }
