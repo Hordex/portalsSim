@@ -86,13 +86,60 @@ function Player(position){
     SimObject.call(this,position,0);
 }
 
-Player.prototype = Object.create(SimObject.prototype);
+Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
+
+Player.prototype.AddPortal = function(direction){
+    this.PersonalPortal = new Portal(this.Position,direction,true);
+}
+
+Player.prototype.Move = function(moveVector){
+    SimObject.prototype.Move.call(this,moveVector);
+    this.PersonalPortal.Move(moveVector);
+}
+
+Player.prototype.Teleport = function(newPosition){
+    SimObject.prototype.Teleport.call(this,newPosition);
+    this.PersonalPortal.Teleport(newPosition);
+}
+
+// === Portal
+
+function Portal(position,direction,InbPlayer){
+    Circle.call(this,position,SimSettings.portalDiameter/2);
+    if(direction === PortalDirections.east){
+        this.Offset = new Point(1,0);
+    } else {
+        this.Offset = new Point(-1,0);
+    }
+    this.bPlayer = InbPlayer;
+    this.LinkedEndpoint = new Circle(position.Add(this.Offset),SimSettings.portalDiameter/2);
+}
+
+Portal.prototype = Object.create(Circle.prototype);
+Portal.prototype.constructor = Portal;
+
+Portal.prototype.Rotate = function(rotor){
+    SimObject.prototype.Rotate.call(this,rotor);
+    this.Offset = this.Offset.Rotate(rotor);
+    this.LinkedEndpoint.Teleport(this.Position.Add(this.Offset));
+}
+
+Portal.prototype.Move = function(moveVector){
+    SimObject.prototype.Move.call(this,moveVector);
+    this.LinkedEndpoint.Move(moveVector);
+}
+
+Portal.prototype.Teleport = function(newPosition){
+    SimObject.prototype.Move.call(this,newPosition);
+    this.LinkedEndpoint.Teleport(this.Position.Add(this.Offset));
+}
 
 SimulationState.prototype.Init = function(inScenario){
     SimulationState.call(this);
     this.Scenario = inScenario;
     this.Player = new Player(new Point(SimSettings.arenaWidth,SimSettings.arenaHeight).Multiply(Math.random()*0.5 + 0.25));
+    this.Player.AddPortal(inScenario.PlayerDirection);
     this.Bots = [
         new Character(new Point(0,0)),
         new Character(new Point(0,SimSettings.arenaHeight)),
