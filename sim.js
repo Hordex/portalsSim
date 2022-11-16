@@ -4,13 +4,27 @@ function SimulationState(){
     this.Objects = [];
     this.Player = null;
     this.Bots = [];
+    this.Time = 0;
 }
+
+let MoveVectors = {
+    up : new Point(0,1),
+    down : new Point(0,-1),
+    left : new Point(-1,0),
+    right : new Point(1,0)
+}
+
+let SimObjectIDGen = 0;
 
 // === SimObject
 function SimObject(position, rotation){
     this.Position = position;
     this.Rotation = rotation;
     this.bDirty = false;
+    this.ID = "SimObject" + SimObjectIDGen;
+    SimObjectIDGen += 1;
+    this.RenderOffsetX = 0;
+    this.RenderOffsetY = 0;
 }
 
 SimObject.prototype.Move = function(moveVector){
@@ -60,7 +74,7 @@ Circle.prototype.constructor = Circle;
 // === Character
 
 function Character(position){
-    SimObject.call(this,postion,0);
+    SimObject.call(this,position,0);
 }
 
 Character.prototype = Object.create(SimObject.prototype);
@@ -69,7 +83,7 @@ Character.prototype.constructor = Character;
 // === Player
 
 function Player(position){
-    SimObject.call(this,postion,0);
+    SimObject.call(this,position,0);
 }
 
 Player.prototype = Object.create(SimObject.prototype);
@@ -78,5 +92,24 @@ Player.prototype.constructor = Player;
 SimulationState.prototype.Init = function(inScenario){
     SimulationState.call(this);
     this.Scenario = inScenario;
-    this.Player = new Player(new Point(Math.random()*0.5 + 0.25,Math.random()*0.5 + 0.25));
+    this.Player = new Player(new Point(SimSettings.arenaWidth,SimSettings.arenaHeight).Multiply(Math.random()*0.5 + 0.25));
+    this.Bots = [
+        new Character(new Point(0,0)),
+        new Character(new Point(0,SimSettings.arenaHeight)),
+        new Character(new Point(SimSettings.arenaWidth,SimSettings.arenaHeight)),
+        new Character(new Point(SimSettings.arenaWidth,0))
+    ];
+}
+
+SimulationState.prototype.CheckArenaBounds = function(){
+    if(!this.Bounds.IsPointIn(this.Player.Position)){
+        Messages.push("Walked into death wall. SLOW DEATH");
+        CancelSimulation();
+    }
+}
+
+SimulationState.prototype.Tick = function(input, time){
+    this.Time += time;
+    CurrentSimulationState.Player.Move(input.Multiply(SimSettings.playerSpeed * time / 1000));
+    this.CheckArenaBounds();
 }

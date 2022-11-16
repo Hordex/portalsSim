@@ -12,7 +12,7 @@ Point.prototype.Multiply = function(scalar){
 }
 
 Point.prototype.Divide = function(scalar){
-    return new Point(this.X * scalar, this.Y * scalar);
+    return new Point(this.X / scalar, this.Y / scalar);
 }
 
 Point.prototype.Rotate = function(rotor){
@@ -23,6 +23,22 @@ Point.prototype.Rotate = function(rotor){
 
 Point.prototype.LengthSquared = function(){
     return this.X * this.X + this.Y * this.Y;
+}
+
+Point.prototype.Length = function(){
+    return Math.sqrt(this.LengthSquared());
+}
+
+Point.prototype.Normalised = function(){
+    return this.Divide(this.Length());
+}
+
+Point.prototype.NormalisedSafe = function(){
+    let currentLength = this.Length(); 
+    if(currentLength < 0.001){
+        return new Point(this.X, this.Y);
+    }
+    return this.Divide(currentLength);
 }
 
 function AABB(point1, point2){

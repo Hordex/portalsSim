@@ -5,12 +5,17 @@
         <title>Zombie boss portals</title>
     </head>
     <body style="background-color: grey;">
-        <div id="Sim" style="display: inline-block;">
+        <div id="Sim" style="float: left;margin:15px;">
             <div id="field" style="background-color:#9e7700;display: inline-block;">
-                <div id="arena" style="background-image:url('arena.png');background-size: contain;"></div>
+                <div id="arena" style="background-image:url('arena.png');background-size: contain;">
+                    <div id="ObjectContainer" style="width: 0px; height:0px;position: relative;">
+                    </div>
+                </div>
             </div>
         </div>
         <div id="Info" style="display:inline-block;">
+            <div id="Settings">
+            </div>
             <div id="FailStates">
                 <div>Didin't get teleported. DEATH</div>
                 <div>Started in when had to be out. DEATH</div>

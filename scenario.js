@@ -1,3 +1,13 @@
+const OptionsNames = {
+    northSafePortalOption:"northSafePortalOption",
+    southSafePortalOption:"southSafePortalOption",
+    playerRotationOption:"playerRotationOption",
+    playerDirectionOption:"playerDirectionOption",
+    staffOrderOption:"staffOrderOption",
+    toggleButton:"toggleButton",
+    cancelButton:"cancelButton"
+}
+
 const StaffBooms = {
     inner : "inner",
     outer : "outer"
@@ -38,12 +48,12 @@ function ValidateStringInput(input, expectations){
 }
 
 function ValidateNumInput(input, max){
-    let fallback = Math.floor(Math.random() * max);
+    let fallback = Math.floor(Math.random() * max + 1);
     if(input === undefined) {
         return fallback;
     }
     let value = +input;
-    if(!isFinite(value) || value < 0 || value >= max) {
+    if(!isFinite(value) || value <= 0 || value > max) {
         return fallback;
     }
     return value;
@@ -76,12 +86,12 @@ function ScenarioGenerator(staffOrder, northSafePortal, southSafePortal, playerR
         }
     }
 
-    this.NorthSafePortal = ValidateNumInput(northSafePortal);
+    this.NorthSafePortal = ValidateNumInput(northSafePortal,4)-1;
     this.NorthSafeRotation = SafePortalConfigurationOrder[(this.NorthSafePortal) % 2];
     this.NorthFakePortal = (this.NorthSafePortal + 2) % 4;
     this.NorthFakeRotation = SafePortalConfigurationOrder[(this.NorthFakePortal + 1) % 2];
 
-    this.SouthSafePortal = ValidateNumInput(southSafePortal);
+    this.SouthSafePortal = ValidateNumInput(southSafePortal,4)-1;
     this.SouthSafeRotation = SafePortalConfigurationOrder[(this.SouthSafePortal + 1) % 2];
     this.SouthFakePortal = (this.SouthSafePortal + 2) % 4;
     this.SouthFakeRotation = SafePortalConfigurationOrder[(this.SouthFakePortal) % 2];
