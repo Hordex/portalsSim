@@ -1,4 +1,5 @@
 let curTime = new Date();
+let bEnding = false;
 let bSimulating = false;
 let bRestart = true;
 let CurrentSimulationState = null;
@@ -46,6 +47,10 @@ function tick(){
     curTime = newTime;
     TickLogic(ticks);
     RenderUpdate();
+    if(bEnding){
+        bEnding = false;
+        bSimulating = false;
+    }
 }
 
 function GetOption(name){
@@ -69,15 +74,16 @@ function BeginSimulation(){
         CreateRenderState(CurrentSimulationState);
     }
     bSimulating = true;
+    bEnding = false;
 }
 
 function CancelSimulation(){
-    bSimulating = false;
+    bEnding = true;
     bRestart = true;
 }
 
 function PauseSimulation(){
-    bSimulating = false;
+    bEnding = true;
 }
 
 function ToggleSimulation(){

@@ -94,6 +94,13 @@ function SetPosition(inSimObject){
     object.style.left = (SimSettings.unitSize * inSimObject.Position.X + inSimObject.RenderOffsetX) + "px";
 }
 
+
+
+function SetVisibility(inSimObject){
+    let object = document.getElementById(inSimObject.ID);
+    object.style.visibility = inSimObject.Visible ? "visible" : "collapse";
+}
+
 function SetRotation(inSimObject){
     let object = document.getElementById(inSimObject.ID);
     let oldTransform = object.style.transform;
@@ -219,6 +226,7 @@ function RenderObject(inSimObject){
         inSimObject.bDirty = false;
         SetPosition(inSimObject);
         SetRotation(inSimObject);
+        SetVisibility(inSimObject);
     }
 }
 

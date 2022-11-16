@@ -70,22 +70,55 @@ ValidateTeleport.prototype = Object.create(SimEvent.prototype);
 ValidateTeleport.prototype.constructor = ValidateTeleport;
 
 ValidateTeleport.prototype.StartEvent = function(){
-    let bSuccess = false;
+    this.bSuccess = false;
     let playerPos = this.ParentSimState.Player.Position;
+    this.EndPos = playerPos;
     for (object of this.ParentSimState.Objects) {
         if(! object instanceof Portal){
             continue;
         }
 
         if(object.IsOverlapping(playerPos)){
-            bSuccess = true;
+            this.StartPos = playerPos;
+            let TravelOffset = object.Offset.Rotate(object.Rotation);
+            if(!Circle.prototype.IsOverlapping.call(object,playerPos)){
+                TravelOffset = TravelOffset.Multiply(-1);
+            }
+            this.EndPos = this.StartPos.Add(TravelOffset);  
+            this.bSuccess = true;
             break;
         }
     }
 
-    if(!bSuccess){
+    if(!this.bSuccess){
         this.ParentSimState.Fail("Didn't use teleport. DEATH");
     }
 
     SimEvent.prototype.StartEvent.call(this);
+}
+
+ValidateTeleport.prototype.Tick = function(ticks){
+    this.TimePassed += ticks;
+
+    if(this.bSuccess){
+        let timeParam = Math.min(Math.max(this.TimePassed / this.Duration,0),1);
+        let end = object.Mechanic === Rotations.cw ? 90 : -90;
+        this.ParentSimState.Player.Teleport(this.StartPos.Multiply(1-timeParam).Add(this.EndPos.Multiply(timeParam)));
+    }
+    
+    if(this.TimePassed >= this.Duration){
+        this.EndEvent();
+    }
+}
+
+ValidateTeleport.prototype.EndEvent = function(){
+    for (object of this.ParentSimState.Objects) {
+        if(! object instanceof Portal){
+            continue;
+        }
+
+        object.SetVisibility(false);
+    }
+
+    SimEvent.prototype.EndEvent.call(this);
 }

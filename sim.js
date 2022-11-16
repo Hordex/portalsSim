@@ -6,9 +6,9 @@ function SimulationState(){
     this.Bots = [];
     this.Time = 0;
     this.EventQueue = [ 
-        new RotateFieldPortals(4000,1000,this),
-        new ValidateTeleport(5500,0,this),
-        new RotatePlayerPortalEvent(6000,1000,this),
+        new RotateFieldPortals(10000,500,this),
+        new ValidateTeleport(12000,500,this),
+        new RotatePlayerPortalEvent(12650,500,this),
     ];
     this.OngoingEvents = [];
 }
@@ -31,6 +31,12 @@ function SimObject(position, rotation){
     SimObjectIDGen += 1;
     this.RenderOffsetX = 0;
     this.RenderOffsetY = 0;
+    this.Visible = true;
+}
+
+SimObject.prototype.SetVisibility = function(visibility){
+    this.bDirty = visibility !== this.Visible;
+    this.Visible = visibility;
 }
 
 SimObject.prototype.Move = function(moveVector){
@@ -175,7 +181,7 @@ SimulationState.prototype.Init = function(inScenario){
 
 SimulationState.prototype.Fail = function(reason){
     Messages.push(reason);
-    CancelSimulation();
+    CancelSimulation(); 
 }
 
 SimulationState.prototype.CheckArenaBounds = function(){
