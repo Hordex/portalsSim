@@ -7,6 +7,10 @@ Point.prototype.Add = function(Other){
     return new Point(this.X + Other.X, this.Y + Other.Y);
 };
 
+Point.prototype.Subtract = function(Other){
+    return new Point(this.X - Other.X, this.Y - Other.Y);
+};
+
 Point.prototype.Multiply = function(scalar){
     return new Point(this.X * scalar, this.Y * scalar);
 }
@@ -16,9 +20,9 @@ Point.prototype.Divide = function(scalar){
 }
 
 Point.prototype.Rotate = function(rotor){
-    let sinx = Math.sin(rotor);
-    let cosx = Math.cos(rotor);
-    return new Point(x * cosx - y*sinx, x * sinx + y * cosx);
+    let sinx = Math.sin(-rotor * Math.PI /180);
+    let cosx = Math.cos(-rotor * Math.PI /180);
+    return new Point(this.X * cosx - this.Y*sinx, this.X * sinx + this.Y * cosx);
 }
 
 Point.prototype.LengthSquared = function(){

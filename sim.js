@@ -5,6 +5,12 @@ function SimulationState(){
     this.Player = null;
     this.Bots = [];
     this.Time = 0;
+    this.EventQueue = [ 
+        new RotateFieldPortals(4000,1000,this),
+        new ValidateTeleport(5500,0,this),
+        new RotatePlayerPortalEvent(6000,1000,this),
+    ];
+    this.OngoingEvents = [];
 }
 
 let MoveVectors = {
@@ -43,6 +49,11 @@ SimObject.prototype.Rotate = function(rotor){
     this.bDirty = true;
 }
 
+SimObject.prototype.RotateTeleport = function(rotor){
+    this.Rotation = rotor;
+    this.bDirty = true;
+}
+
 // === Rectangle
 
 function Rectangle(position, rotation, size){
@@ -64,12 +75,12 @@ function Circle(postion, radius){
     this.Radius = radius;
 }
 
-Circle.prototype.IsOverlapping = function(position){
-    return (position - this.Position).LengthSquared() <= this.Radius * this.Radius;
-}
-
 Circle.prototype = Object.create(SimObject.prototype);
 Circle.prototype.constructor = Circle;
+
+Circle.prototype.IsOverlapping = function(position){
+    return (position.Subtract(this.Position)).LengthSquared() <= this.Radius * this.Radius;
+}
 
 // === Character
 
@@ -90,17 +101,15 @@ Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
 
 Player.prototype.AddPortal = function(direction,rotation){
-    this.PersonalPortal = new Portal(this.Position,direction,true,rotation);
+    this.PersonalPortal = new Portal(new Point(0,SimSettings.arenaHeight),direction,true,rotation);
 }
 
 Player.prototype.Move = function(moveVector){
     SimObject.prototype.Move.call(this,moveVector);
-    this.PersonalPortal.Move(moveVector);
 }
 
 Player.prototype.Teleport = function(newPosition){
     SimObject.prototype.Teleport.call(this,newPosition);
-    this.PersonalPortal.Teleport(newPosition);
 }
 
 // === Portal
@@ -124,8 +133,7 @@ Portal.prototype.constructor = Portal;
 
 Portal.prototype.Rotate = function(rotor){
     SimObject.prototype.Rotate.call(this,rotor);
-    this.Offset = this.Offset.Rotate(rotor);
-    this.LinkedEndpoint.Teleport(this.Position.Add(this.Offset));
+    this.LinkedEndpoint.Teleport(this.Position.Add(this.Offset.Rotate(rotor)));
 }
 
 Portal.prototype.Move = function(moveVector){
@@ -138,6 +146,15 @@ Portal.prototype.Teleport = function(newPosition){
     this.LinkedEndpoint.Teleport(this.Position.Add(this.Offset));
 }
 
+Portal.prototype.RotateTeleport = function(rotor){
+    SimObject.prototype.RotateTeleport.call(this,rotor);
+    this.LinkedEndpoint.Teleport(this.Position.Add(this.Offset.Rotate(rotor)));
+}
+
+Portal.prototype.IsOverlapping = function(position){
+    return Circle.prototype.IsOverlapping.call(this,position) || this.LinkedEndpoint.IsOverlapping(position);
+}
+
 SimulationState.prototype.Init = function(inScenario){
     SimulationState.call(this);
     this.Scenario = inScenario;
@@ -146,20 +163,56 @@ SimulationState.prototype.Init = function(inScenario){
     this.Bots = [
         new Character(new Point(0,0)),
         new Character(new Point(0,SimSettings.arenaHeight)),
-        new Character(new Point(SimSettings.arenaWidth,SimSettings.arenaHeight)),
-        new Character(new Point(SimSettings.arenaWidth,0))
+        new Character(new Point(SimSettings.arenaWidth,SimSettings.arenaHeight))
     ];
+    this.Objects = [
+        this.SpawnPortal(SimSettings.arenaHeight - 0.5,this.Scenario.NorthSafePortal,this.Scenario.NorthSafeRotation),
+        this.SpawnPortal(SimSettings.arenaHeight - 0.5,this.Scenario.NorthFakePortal,this.Scenario.NorthFakeRotation),
+        this.SpawnPortal(0.5,this.Scenario.SouthSafePortal,this.Scenario.SouthSafeRotation),
+        this.SpawnPortal(0.5,this.Scenario.SouthFakePortal,this.Scenario.SouthFakeRotation)
+    ];
+}
+
+SimulationState.prototype.Fail = function(reason){
+    Messages.push(reason);
+    CancelSimulation();
 }
 
 SimulationState.prototype.CheckArenaBounds = function(){
     if(!this.Bounds.IsPointIn(this.Player.Position)){
-        Messages.push("Walked into death wall. SLOW DEATH");
-        CancelSimulation();
+        this.Fail("Walked into death wall. SLOW DEATH");
     }
+}
+
+SimulationState.prototype.SpawnPortal = function(Y, number, mechanic){
+    const X = [
+        SimSettings.portalDiameter / 2, 
+        SimSettings.portalDiameter / 2 + 1,
+        SimSettings.arenaWidth - SimSettings.portalDiameter/2 - 1, 
+        SimSettings.arenaWidth - SimSettings.portalDiameter/2 
+    ]
+    let direction = (number%2) === 0 ? PortalDirections.east : PortalDirections.west;
+    return new Portal(new Point(X[number],Y),direction,false,mechanic);
 }
 
 SimulationState.prototype.Tick = function(input, time){
     this.Time += time;
     CurrentSimulationState.Player.Move(input.Multiply(SimSettings.playerSpeed * time / 1000));
     this.CheckArenaBounds();
+
+    for (oldEvent of this.OngoingEvents) {
+        oldEvent.Tick(time);
+    }
+
+    for (newEvent of this.EventQueue) {
+        if(newEvent.StartTime <= this.Time){
+            if(newEvent.Duration > 0){
+                this.OngoingEvents.push(newEvent);
+            }
+            newEvent.StartEvent();
+        }
+    }
+
+    this.OngoingEvents = this.OngoingEvents.filter(item => !item.Done);
+    this.EventQueue = this.EventQueue.filter(item => !item.Started);
 }

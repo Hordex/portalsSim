@@ -94,6 +94,41 @@ function SetPosition(inSimObject){
     object.style.left = (SimSettings.unitSize * inSimObject.Position.X + inSimObject.RenderOffsetX) + "px";
 }
 
+function SetRotation(inSimObject){
+    let object = document.getElementById(inSimObject.ID);
+    let oldTransform = object.style.transform;
+    let splitTransform = oldTransform.split(" ");
+    let newRotation = "rotate(" + inSimObject.Rotation + "deg)";
+    switch (splitTransform.length) {
+        case 0:
+            object.style.transform = newRotation;
+            break;
+        case 1:
+            let bIsRotation = oldTransform.includes("rotate");
+            if(bIsRotation){
+                object.style.transform = newRotation;
+            } else {
+                splitTransform.push(newRotation)
+                object.style.transform = splitTransform.join(" ");
+            }
+            break;
+        default:
+            let bFound = false;
+            for (let index = 0; index < splitTransform.length; index++) {
+                const transform = splitTransform[index];
+                if(transform.includes("rotate")){
+                    splitTransform[index] = newRotation;
+                }
+                bFound = true;   
+            }
+            if(!bFound){
+                splitTransform.push(newRotation)
+            }
+            object.style.transform = splitTransform.join(" ");
+            break;
+    }
+}
+
 function CreateBaseRenderObject(inSimObject){
     let renderObject = document.createElement("div");
     renderObject.style.position = "absolute";
@@ -148,6 +183,7 @@ function CreateRenderState(inSimulationState){
     let playerPortal = CreatePortalRenderState(palyerData.PersonalPortal,-10);
     playerPortal.firstChild.style.backgroundImage = "url('bridge_player1.png')";
     let portalrenderOffset = -SimSettings.portalDiameter * SimSettings.unitSize / 2;
+    palyerData.PersonalPortal.RenderOffsetX = palyerData.PersonalPortal.RenderOffsetY = (portalrenderOffset - palyerData.RenderOffsetX);
     playerPortal.style.left = playerPortal.style.top = (portalrenderOffset - palyerData.RenderOffsetX) + "px";
     playerAvatar.appendChild(playerPortal);
     playerAvatar.style.zIndex = 100;
@@ -168,12 +204,21 @@ function CreateRenderState(inSimulationState){
         SetPosition(Bot);
     }
 
+    for (simObject of CurrentSimulationState.Objects) {
+        if(simObject instanceof Portal){
+            let portalAvatar = CreatePortalRenderState(simObject,-14);
+            simObject.RenderOffsetX = simObject.RenderOffsetY = portalrenderOffset;
+            container.appendChild(portalAvatar);
+            SetPosition(simObject);
+        }
+    }
 }
 
 function RenderObject(inSimObject){
     if(inSimObject.bDirty){
         inSimObject.bDirty = false;
         SetPosition(inSimObject);
+        SetRotation(inSimObject);
     }
 }
 
@@ -182,8 +227,12 @@ function RenderSimState(){
         return;
     }
     RenderObject(CurrentSimulationState.Player);
+    RenderObject(CurrentSimulationState.Player.PersonalPortal);
     for (Bot of CurrentSimulationState.Bots) {
         RenderObject(Bot);
+    }
+    for (simObject of CurrentSimulationState.Objects) {
+        RenderObject(simObject);
     }
 }
 
