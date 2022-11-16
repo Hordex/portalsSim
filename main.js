@@ -3,28 +3,48 @@ let bSimulating = false;
 let bRestart = true;
 let CurrentSimulationState = null;
 let Messages = []
+let pendingToggle = false;
+let pendingReset = false;
+
 
 function GatherInput(){
     let Result = new Point(0,0);
     for (const KeyCode in KeyCodes) {
         const element = pressedKeys[KeyCode];
-        if(element){
+        if(element && MoveVectors[KeyCodes[KeyCode]]){
             Result = Result.Add(MoveVectors[KeyCodes[KeyCode]])
         }
     }
     return Result.NormalisedSafe();
 }
 
+function TickLogic(ticks){
+    pendingReset = pendingReset || pressedKeys[82];
+    pendingToggle = pendingToggle || pressedKeys[80];
+    if(pendingReset && !pressedKeys[82]){
+        pendingReset = false;
+        CancelSimulation();
+        BeginSimulation();
+        return;
+    }
+
+    if(pendingToggle && ! pressedKeys[80]){
+        pendingToggle = false;
+        ToggleSimulation();
+    }
+
+    if (!bSimulating){
+        return;
+    } else {
+        CurrentSimulationState.Tick(GatherInput(), ticks);
+    }
+}
+
 function tick(){
     const newTime = Date.now();
     let ticks = newTime - curTime;
     curTime = newTime;
-
-    if (!bSimulating){
-        ticks = 0;
-    } else {
-        CurrentSimulationState.Tick(GatherInput(), ticks);
-    }
+    TickLogic(ticks);
     RenderUpdate();
 }
 

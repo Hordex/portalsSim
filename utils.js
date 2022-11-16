@@ -28,7 +28,9 @@ let KeyCodes = {
     87 : Moves.up,
     65 : Moves.left,
     68 : Moves.right,
-    83 : Moves.down
+    83 : Moves.down,
+    80 : "p",
+    82 : "r"
 }
 
 var pressedKeys = {};
