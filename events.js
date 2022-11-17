@@ -26,9 +26,6 @@ class SimEvent {
 
 
 class RotatePlayerPortalEvent extends SimEvent {
-    constructor(startTime, duration, parentSimState) {
-        super(startTime, duration, parentSimState);
-    }
     Tick(ticks) {
         this.TimePassed += ticks;
         let timeParam = Math.min(Math.max(this.TimePassed / this.Duration, 0), 1);
@@ -42,9 +39,6 @@ class RotatePlayerPortalEvent extends SimEvent {
 
 
 class RotateFieldPortals extends SimEvent {
-    constructor(startTime, duration, parentSimState) {
-        super(startTime, duration, parentSimState);
-    }
     Tick(ticks) {
         this.TimePassed += ticks;
         for (let sceneObject of this.ParentSimState.Objects) {
@@ -122,6 +116,8 @@ class ValidateTeleport extends SimEvent {
     }
 }
 
+class ShowFieldPortals extends SimEvent{
 
+}
 
 

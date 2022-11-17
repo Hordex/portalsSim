@@ -161,9 +161,6 @@ class Character extends SimObject{
 // === Player
 
 class Player extends Character{
-    constructor(position) {
-        super(position, 0);
-    }
     AddPortal(direction, rotation) {
         this.PersonalPortal = new Portal(new Point(0, SimSettings.arenaHeight), direction, true, rotation);
     }
