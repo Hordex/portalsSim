@@ -5,7 +5,8 @@ const OptionsNames = {
     playerDirectionOption:"playerDirectionOption",
     staffOrderOption:"staffOrderOption",
     toggleButton:"toggleButton",
-    cancelButton:"cancelButton"
+    cancelButton:"cancelButton",
+    skipToBanishment:"skipToBanishment"
 }
 
 const StaffBooms = {

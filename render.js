@@ -5,6 +5,10 @@ function UpdateArena(){
     arena.style.margin = SimSettings.marginTop * SimSettings.unitSize + "px " + SimSettings.marginRight * SimSettings.unitSize + "px";
 }
 
+function HTMLVisibility(visibility){
+    return visibility ? "visible" : "collapse";
+}
+
 function createDropdownOption(option){
     let inputElement = document.createElement("option");
     inputElement.value = option;
@@ -34,6 +38,25 @@ function CreateDropdowns(ID, description, options){
     return container;
 }
 
+function CreateCheckBox(ID,description){
+    let container = document.createElement("div");
+    container.id = ID + "container";
+
+    let checkboxElement = document.createElement("input");
+    checkboxElement.type = "checkbox";
+    checkboxElement.id = ID;
+    checkboxElement.name = ID;
+    checkboxElement.checked = true;
+    container.appendChild(checkboxElement);
+
+    let optionLabel = document.createElement("label");
+    optionLabel.innerText = description;
+    optionLabel.for = ID;
+    optionLabel.style.marginLeft = "5px";
+    container.appendChild(optionLabel);
+    return container;
+}
+
 function AddButton(ID,description,delegate){
     let newButton = document.createElement("button");
     newButton.innerText = description;
@@ -59,6 +82,7 @@ function PrepareUI(){
     SettingsPanel.appendChild(CreateDropdowns(OptionsNames.playerRotationOption,"Rotation on player's portal",["random",Rotations.cw,Rotations.ccw]));
     SettingsPanel.appendChild(CreateDropdowns(OptionsNames.playerDirectionOption,"Initial direction of player portal",["random",PortalDirections.west,PortalDirections.east]));
     SettingsPanel.appendChild(CreateDropdowns(OptionsNames.staffOrderOption,"First staves cleaving",["random",StaffBooms.inner,StaffBooms.outer]));
+    SettingsPanel.appendChild(CreateCheckBox(OptionsNames.skipToBanishment,"Skip mechanic prep"));
 }
 
 function UpdateButtons(){
@@ -98,7 +122,7 @@ function SetPosition(inSimObject){
 
 function SetVisibility(inSimObject){
     let object = document.getElementById(inSimObject.ID);
-    object.style.visibility = inSimObject.Visible ? "visible" : "collapse";
+    object.style.visibility = HTMLVisibility(inSimObject.Visible);
 }
 
 function SetRotation(inSimObject){
@@ -141,6 +165,7 @@ function CreateBaseRenderObject(inSimObject){
     renderObject.style.position = "absolute";
     renderObject.style.backgroundSize = "contain";
     renderObject.id = inSimObject.ID;
+    renderObject.style.visibility = HTMLVisibility(inSimObject.Visible);
     return renderObject;
 }
 
@@ -227,6 +252,68 @@ function RenderObject(inSimObject){
         SetPosition(inSimObject);
         SetRotation(inSimObject);
         SetVisibility(inSimObject);
+        if(inSimObject instanceof Portal){
+            SetVisibility(inSimObject.Bridge);
+            SetVisibility(inSimObject.LinkedEndpoint);
+            SetVisibility(inSimObject.MechanicMarker);
+        }
+    }
+}
+
+function RenderCastBar(inCast){
+    if(inCast.bDirty){
+        inCast.bDirty = false;
+        let castContainer = document.getElementById("castbar");
+        castContainer.style.visibility = HTMLVisibility(inCast.Active);
+        let castLabel = document.getElementById("castLabel");
+        castLabel.innerText = inCast.Name.toUpperCase();
+        let castProgress = document.getElementById("castProgress");
+        castProgress.value = inCast.Progress;
+    }
+}
+
+function AddStatus(status){
+    var statusAvatar = document.createElement("div");
+    statusAvatar.id = status.Name;
+    statusAvatar.style.float = "left";
+    statusAvatar.style.textAlign = "center";
+    var statusImage = document.createElement("div");
+    statusImage.style.backgroundImage = `url('${status.Image}')`;
+    statusImage.style.width = `48px`;
+    statusImage.style.height= `64px`;
+    statusAvatar.appendChild(statusImage);
+    var statusDuration = document.createElement("div");
+    statusDuration.style.display = "contents";
+    statusAvatar.appendChild(statusDuration);
+    RenderStatus(statusAvatar,status);
+    return statusAvatar;
+}
+
+function RenderStatus(statusAvatar, status){
+    statusAvatar.lastChild.innerText = status.GetDurationString();
+}
+
+function RenderStatuses(statuses){
+    let container = document.getElementById("StatusBar");
+    let ChildrenToDelete = []
+    for (const child of container.childNodes) {
+        if(!child.id) {
+            continue;
+        }
+        if(!statuses.some(status => status.Name === child.id)){
+            ChildrenToDelete.push(child.id);
+        }
+    }
+    for (const child of ChildrenToDelete) {
+        document.getElementById(child).remove();
+    }
+    for (const status of statuses) {
+        let statusAvatar = document.getElementById(status.Name);
+        if(statusAvatar){
+            RenderStatus(statusAvatar,status);
+        } else {
+            container.appendChild(AddStatus(status));
+        }
     }
 }
 
@@ -242,6 +329,8 @@ function RenderSimState(){
     for (simObject of CurrentSimulationState.Objects) {
         RenderObject(simObject);
     }
+    RenderCastBar(CurrentSimulationState.Cast);
+    RenderStatuses(CurrentSimulationState.Player.Statuses);
 }
 
 function RenderLog(){

@@ -6,10 +6,14 @@
     </head>
     <body style="background-color: grey;">
         <div id="Sim" style="float: left;margin:15px;">
-            <div id="field" style="background-color:#9e7700;display: inline-block;">
+            <div id="field" style="background-color:#9e7700;display: inline-block;position: relative;">
                 <div id="arena" style="background-image:url('arena.png');background-size: contain;">
                     <div id="ObjectContainer" style="width: 0px; height:0px;position: relative;">
                     </div>
+                </div>
+                <div id="castbar" style="position:absolute;top:55%;left:50%;margin: auto;transform: translate(-50%, -50%);visibility: collapse; z-index: 90;">
+                    <label id="castLabel" style="font-weight:bold; font-size: x-large;font-family: sans-serif;">CAST NAME</label><br/>
+                    <progress id="castProgress" value="0.4" max="1"></progress>
                 </div>
             </div>
         </div>
@@ -22,7 +26,10 @@
                 <div>Started out when had to be in. DEATH</div>
                 <div>Baited in the wrong spot. DEATH AND MURDER</div>
             </div>
+            <div id="StatusBar" style="font-size: large;font-family: sans-serif;">
+            </div>
         </div>
+
         <script src="utils.js"></script>
         <script src="math.js"></script>
         <script src="scenario.js"></script>

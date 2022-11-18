@@ -58,6 +58,11 @@ function GetOption(name){
     return domElement.value;
 }
 
+function GetCheck(name){
+    let domElement = document.getElementById(name);
+    return domElement.checked;
+}
+
 function BeginSimulation(){
     if(bRestart || CurrentSimulationState == null){
         bRestart = false;
@@ -70,7 +75,7 @@ function BeginSimulation(){
             GetOption(OptionsNames.playerRotationOption),
             GetOption(OptionsNames.playerDirectionOption)
             );
-        CurrentSimulationState.Init(Scenario);
+        CurrentSimulationState.Init(Scenario,GetCheck(OptionsNames.skipToBanishment));
         CreateRenderState(CurrentSimulationState);
     }
     bSimulating = true;

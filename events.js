@@ -8,6 +8,7 @@ class SimEvent {
     }
     Tick(ticks) {
         this.TimePassed += ticks;
+        this.TickImpl();
         if (this.TimePassed >= this.Duration) {
             this.EndEvent();
         }
@@ -15,10 +16,21 @@ class SimEvent {
     StartEvent() {
         this.TimePassed = this.ParentSimState.Time - this.StartTime;
         this.Started = true;
+        this.OnStart();
         this.Tick(0);
     }
     EndEvent() {
+        this.OnEnd();
         this.Done = true;
+    }
+    OnStart(){
+
+    }
+    OnEnd(){
+
+    }
+    TickImpl(){
+
     }
 }
 
@@ -26,21 +38,16 @@ class SimEvent {
 
 
 class RotatePlayerPortalEvent extends SimEvent {
-    Tick(ticks) {
-        this.TimePassed += ticks;
+    TickImpl() {
         let timeParam = Math.min(Math.max(this.TimePassed / this.Duration, 0), 1);
         let end = this.ParentSimState.Scenario.PlayerRotation === Rotations.cw ? 90 : -90;
         this.ParentSimState.Player.PersonalPortal.RotateTeleport(end * timeParam);
-        if (this.TimePassed >= this.Duration) {
-            this.EndEvent();
-        }
     }
 }
 
 
 class RotateFieldPortals extends SimEvent {
-    Tick(ticks) {
-        this.TimePassed += ticks;
+    TickImpl() {
         for (let sceneObject of this.ParentSimState.Objects) {
             if (!sceneObject instanceof Portal) {
                 continue;
@@ -49,9 +56,6 @@ class RotateFieldPortals extends SimEvent {
             let timeParam = Math.min(Math.max(this.TimePassed / this.Duration, 0), 1);
             let end = sceneObject.Mechanic === Rotations.cw ? 90 : -90;
             sceneObject.RotateTeleport(end * timeParam);
-        }
-        if (this.TimePassed >= this.Duration) {
-            super.EndEvent();
         }
     }
 }
@@ -64,7 +68,7 @@ class ValidateTeleport extends SimEvent {
         this.EndPos = new Point(0,0);
         this.bSuccess = false;
     }
-    StartEvent() {
+    OnStart() {
         this.bSuccess = false;
         let playerPos = this.ParentSimState.Player.Position;
         this.EndPos = playerPos;
@@ -88,22 +92,14 @@ class ValidateTeleport extends SimEvent {
         if (!this.bSuccess) {
             this.ParentSimState.Fail("Didn't use teleport. DEATH");
         }
-
-        super.StartEvent();
     }
-    Tick(ticks) {
-        this.TimePassed += ticks;
-
+    TickImpl() {
         if (this.bSuccess) {
             let timeParam = Math.min(Math.max(this.TimePassed / this.Duration, 0), 1);
             this.ParentSimState.Player.Teleport(this.StartPos.Multiply(1 - timeParam).Add(this.EndPos.Multiply(timeParam)));
         }
-
-        if (this.TimePassed >= this.Duration) {
-            this.EndEvent();
-        }
     }
-    EndEvent() {
+    OnEnd() {
         for (let object of this.ParentSimState.Objects) {
             if (!object instanceof Portal) {
                 continue;
@@ -111,13 +107,93 @@ class ValidateTeleport extends SimEvent {
 
             object.SetVisibility(false);
         }
-
-        super.EndEvent();
     }
 }
 
-class ShowFieldPortals extends SimEvent{
+class CastEvent extends SimEvent{
+    constructor(startTime, duration, parentSimState, name){
+        super(startTime, duration, parentSimState);
+        this.CastName = name;
+    }
+    OnStart(){
+        this.ParentSimState.Cast.Activate(this.CastName);
+    }
+    TickImpl(){
+        this.ParentSimState.Cast.SetProgress(this.TimePassed / this.Duration);
+    }
+}
+
+class ShowFieldObjects extends CastEvent{
+    OnEnd(){
+        for (let sceneObject of this.ParentSimState.Objects) {
+            if (!sceneObject instanceof Portal) {
+                continue;
+            }
+
+            sceneObject.SetVisibility(true);
+        }
+    }
+}
+
+class ChargeStaves extends CastEvent {
 
 }
 
+class ShowMechanics extends CastEvent {
+    OnEnd(){
+        this.ParentSimState.Player.SetPortalVisibility(true);
+        for (let sceneObject of this.ParentSimState.Objects) {
+            if (!sceneObject instanceof Portal) {
+                continue;
+            }
 
+            sceneObject.SetMarkerVisibility(true);
+        }
+    }
+}
+
+class ActivateDeathZones extends CastEvent {
+
+}
+
+class ApplyStatus extends SimEvent {
+    constructor(startTime, duration, parentSimState,name,image){
+        super(startTime, duration, parentSimState);
+        this.Status = new Status(name,image,duration);
+    }
+    OnStart(){
+        this.ParentSimState.Player.Statuses.push(this.Status);
+    }
+    TickImpl(){
+        this.Status.Duration = Math.max(0, this.Duration - this.TimePassed);
+    }
+    OnEnd(){
+        let index = this.ParentSimState.Player.Statuses.indexOf(this.Status);
+        if(index > -1){
+            this.ParentSimState.Player.Statuses.splice(index,1);
+        }
+    }
+}
+
+class Cleave extends ApplyStatus{
+
+}
+
+class UsePlayerTeleport extends SimEvent {
+    OnStart(){
+        let playerPos = this.ParentSimState.Player.Position;
+        this.StartPos = playerPos;
+        let offset = this.ParentSimState.Player.PersonalPortal.Offset.Rotate(this.ParentSimState.Player.PersonalPortal.Rotation);
+        this.EndPos = this.StartPos.Add(offset);
+        this.PortalStartPos = this.ParentSimState.Player.PersonalPortal.Position.Multiply(1);
+        this.PortalEndPos = this.ParentSimState.Player.PersonalPortal.Position.Subtract(offset);
+    }
+    TickImpl(){
+        let timeParam = Math.min(Math.max(this.TimePassed / this.Duration, 0), 1);
+        this.ParentSimState.Player.Teleport(this.StartPos.Multiply(1 - timeParam).Add(this.EndPos.Multiply(timeParam)));
+        this.ParentSimState.Player.PersonalPortal.Teleport(this.PortalStartPos.Multiply(1 - timeParam).Add(this.PortalEndPos.Multiply(timeParam)));
+    }
+    OnEnd(){
+        this.ParentSimState.Player.SetPortalVisibility(false);
+    }
+}

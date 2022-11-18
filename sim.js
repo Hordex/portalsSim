@@ -10,18 +10,33 @@ class SimulationState {
         this.Bots = [];
         this.Time = 0;
         this.EventQueue = [
-            new RotateFieldPortals(10000, 500, this),
-            new ValidateTeleport(12000, 500, this),
-            new RotatePlayerPortalEvent(12650, 500, this),
+            new ShowFieldObjects(0, 3700, this,"Infern Brand"),
+            new ChargeStaves(8100,3700,this,"Infern Wave"),
+            new ShowMechanics(16500,3700,this,"Banishment"),
+            new ApplyStatus(16500+3700,12000, this,"Call of the Portal","tp_floor.png"),
+            new ApplyStatus(16500+3700,20000, this,"Rite of Passage","tp_self.png"),
+            new ActivateDeathZones(24500,3700,this,"Infern Ward"),
+            new RotateFieldPortals(30700,1000, this),
+            new ValidateTeleport(31800,500, this),
+            new Cleave(36500,2000,this,"Magic Vuln","mvuln.png"),
+            new ApplyStatus(37500,5000, this,"Stun","stun.png"),
+            new RotatePlayerPortalEvent(38500,1000, this),
+            new UsePlayerTeleport(40500,1000, this),
+            new Cleave(44500,2000,this,"Magic Vuln","mvuln.png"),
         ];
         this.OngoingEvents = [];
+        this.Cast = new Cast();
     }
 
-    Init(inScenario) {
+    Init(inScenario,bSkipToBanishment) {
         this.Clear();
+        if(bSkipToBanishment){
+            this.Time = 14000;
+        }
         this.Scenario = inScenario;
-        this.Player = new Player(new Point(SimSettings.arenaWidth, SimSettings.arenaHeight).Multiply(Math.random() * 0.5 + 0.25));
+        this.Player = new Player(new Point(SimSettings.arenaWidth, SimSettings.arenaHeight).Multiply( 0.5 ));
         this.Player.AddPortal(inScenario.PlayerDirection, inScenario.PlayerRotation);
+        this.Player.SetPortalVisibility(false);
         this.Bots = [
             new Character(new Point(0, 0)),
             new Character(new Point(0, SimSettings.arenaHeight)),
@@ -33,6 +48,11 @@ class SimulationState {
             this.SpawnPortal(0.5, this.Scenario.SouthSafePortal, this.Scenario.SouthSafeRotation),
             this.SpawnPortal(0.5, this.Scenario.SouthFakePortal, this.Scenario.SouthFakeRotation)
         ];
+
+        for (let sceneObject of this.Objects) {
+            sceneObject.SetVisibility(false);
+            sceneObject.SetMarkerVisibility(false);
+        }
     }
     Fail(reason) {
         Messages.push(reason);
@@ -161,8 +181,23 @@ class Character extends SimObject{
 // === Player
 
 class Player extends Character{
+    constructor(position){
+        super(position);
+        this.PersonalPortal = null;
+        this.Statuses = [];
+    }
     AddPortal(direction, rotation) {
         this.PersonalPortal = new Portal(new Point(0, SimSettings.arenaHeight), direction, true, rotation);
+    }
+    SetPortalVisibility(visibility){
+        this.bDirty = true;
+        this.PersonalPortal.SetVisibility(visibility);
+        this.PersonalPortal.SetMarkerVisibility(visibility);
+    }
+    Move(moveVector){
+        if(!this.Statuses.some(item => item.Name === "Stun")){
+            super.Move(moveVector);
+        }
     }
 }
 
@@ -191,7 +226,7 @@ class Portal extends Circle{
         this.LinkedEndpoint.Move(moveVector);
     }
     Teleport(newPosition) {
-        super.Move(newPosition);
+        super.Teleport(newPosition);
         this.LinkedEndpoint.Teleport(this.Position.Add(this.Offset));
     }
     RotateTeleport(rotor) {
@@ -201,14 +236,55 @@ class Portal extends Circle{
     IsOverlapping(position) {
         return super.IsOverlapping(position) || this.LinkedEndpoint.IsOverlapping(position);
     }
+    SetVisibility(visibility) {
+        this.bDirty = visibility !== this.Visible;
+        this.Visible = visibility;
+        this.Bridge.SetVisibility(visibility);
+        this.LinkedEndpoint.SetVisibility(visibility);
+        if(!this.Visible){
+            this.SetMarkerVisibility(this.Visible);
+        }
+    }
+    SetMarkerVisibility(visibility){
+        this.bDirty = true;
+        this.MechanicMarker.SetVisibility(visibility);
+    }
 }
 
+class Cast {
+    constructor(){
+        this.Name = "";
+        this.Active = false;
+        this.bDirty = true;
+        this.Progress = 0;
+    }
+    SetProgress(newProgress){
+        this.Progress = Math.min(Math.max(newProgress,0),1);
+        this.bDirty = true;
+        if(this.Progress >= 1){
+            this.Deactivate();
+        }
+    }
+    Deactivate(){
+        this.Active = false;
+        this.bDirty = true;
+    }
+    Activate(name){
+        this.Progress = 0;
+        this.Name = name;
+        this.Active = true;
+        this.bDirty = true;
+    }
+}
 
-
-
-
-
-
-
-
-
+class Status {
+    constructor(name,image,duration){
+        this.Name = name;
+        this.Image = image;
+        this.Duration = duration;
+    }
+    GetDurationString(){
+        let tmpDuration = Math.round(this.Duration/1000);
+        return tmpDuration > 0 ? tmpDuration.toString() : "";
+    }
+}
