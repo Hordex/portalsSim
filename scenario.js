@@ -33,8 +33,8 @@ const BaitPositionCalls = {
 
 const BaitPositions = {
     northOut: new Point(1.5, 3.9),
-    northIn: new Point(1.9, 3.8),
-    southIn: new Point(2.1, 1.2),
+    northIn: new Point(0.8, 2.8),
+    southIn: new Point(2.2, 1.2),
     southOut: new Point(1.5,0.1)
 }
 

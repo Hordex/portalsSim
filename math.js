@@ -45,8 +45,6 @@ class Point {
 
 
 
-
-
 class AABB {
     constructor(point1, point2) {
         this.MinX = Math.min(point1.X, point2.X);
@@ -56,6 +54,19 @@ class AABB {
     }
     IsPointIn(testPoint) {
         return this.MinX <= testPoint.X && this.MaxX >= testPoint.X && this.MinY <= testPoint.Y && this.MaxY >= testPoint.Y;
+    }
+    PointsCCW(A,B,C){
+        return (C.Y-A.Y) * (B.X-A.X) > (B.Y-A.Y) * (C.X-A.X);
+    }
+    DoLinesIntersect(A,B,C,D){
+        // IDAF about colinearity
+        return this.PointsCCW(A,C,D) != this.PointsCCW(B,C,D) && this.PointsCCW(A,B,C) != this.PointsCCW(A,B,D);
+    }
+    DoesLineIntersect(A,B){
+        return this.DoLinesIntersect(A,B,new Point(this.MinX,this.MinY),new Point(this.MinX,this.MaxY)) ||
+                this.DoLinesIntersect(A,B,new Point(this.MaxX,this.MinY),new Point(this.MaxX,this.MaxY)) ||
+                this.DoLinesIntersect(A,B,new Point(this.MinX,this.MinY),new Point(this.MaxX,this.MinY)) ||
+                this.DoLinesIntersect(A,B,new Point(this.MinX,this.MaxY),new Point(this.MaxX,this.MaxY));
     }
 }
 

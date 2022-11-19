@@ -1,8 +1,27 @@
+function MakeMarker(url,position){
+    let Marker = document.createElement("div");
+    Marker.style.backgroundImage = `url('${url}')`;
+    Marker.style.backgroundSize = "contain";
+    Marker.style.transform = "translate(-50%,-50%)";
+    Marker.style.position = "absolute";
+    Marker.style.top = (SimSettings.unitSize * (SimSettings.arenaHeight - position.Y)) + "px";
+    Marker.style.left = (SimSettings.unitSize * position.X) + "px";
+    Marker.style.width = Marker.style.height = SimSettings.portalDiameter * SimSettings.unitSize + "px";
+    return Marker;
+}
+
 function UpdateArena(){
     let arena = GetObject("arena");
     arena.style.aspectRatio = SimSettings.arenaWidth + "/" + SimSettings.arenaHeight;
     arena.style.width = SimSettings.arenaWidth * SimSettings.unitSize + "px";
     arena.style.margin = SimSettings.marginTop * SimSettings.unitSize + "px " + SimSettings.marginRight * SimSettings.unitSize + "px";
+
+    arena.insertBefore(MakeMarker("M1.png",BaitPositions[BaitPositionCalls.northIn]),arena.firstChild);
+    arena.insertBefore(MakeMarker("MA.png",BaitPositions[BaitPositionCalls.northOut]),arena.firstChild);
+    arena.insertBefore(MakeMarker("M3.png",BaitPositions[BaitPositionCalls.southIn]),arena.firstChild);
+    arena.insertBefore(MakeMarker("MC.png",BaitPositions[BaitPositionCalls.southOut]),arena.firstChild);
+    arena.insertBefore(MakeMarker("M2.png",new Point(0.5,0.5)),arena.firstChild);
+    arena.insertBefore(MakeMarker("M4.png",new Point(2.5, 3.5)),arena.firstChild);
 }
 
 function HTMLVisibility(visibility){
@@ -202,6 +221,15 @@ function CreatePortalRenderState(inPortal,zTranslate){
     return PortalBody;
 }
 
+function CreateRectangleRenderState(inSimObject){
+    let rectnagleBody = CreateBaseRenderObject(inSimObject);
+    rectnagleBody.style.width = (SimSettings.unitSize * inSimObject.LocalBB.MaxX) + "px";
+    rectnagleBody.style.height = (SimSettings.unitSize * inSimObject.LocalBB.MaxY) + "px";
+    rectnagleBody.style.backgroundColor = "red";
+    inSimObject.RenderOffsetY = -(SimSettings.unitSize * inSimObject.LocalBB.MaxY);
+    return rectnagleBody;
+}
+
 function CreateRenderState(inSimulationState){
     let container = GetObjectContainer();
 
@@ -241,6 +269,10 @@ function CreateRenderState(inSimulationState){
             let portalAvatar = CreatePortalRenderState(simObject,-14);
             simObject.RenderOffsetX = simObject.RenderOffsetY = portalrenderOffset;
             container.appendChild(portalAvatar);
+            SetPosition(simObject);
+        } else if(simObject instanceof Rectangle){
+            let rectangleAvatar = CreateRectangleRenderState(simObject,-14);
+            container.appendChild(rectangleAvatar);
             SetPosition(simObject);
         }
     }

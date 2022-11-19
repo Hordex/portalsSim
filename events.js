@@ -49,7 +49,7 @@ class RotatePlayerPortalEvent extends SimEvent {
 class RotateFieldPortals extends SimEvent {
     TickImpl() {
         for (let sceneObject of this.ParentSimState.Objects) {
-            if (!sceneObject instanceof Portal) {
+            if (!(sceneObject instanceof Portal)) {
                 continue;
             }
 
@@ -73,7 +73,7 @@ class ValidateTeleport extends SimEvent {
         let playerPos = this.ParentSimState.Player.Position;
         this.EndPos = playerPos;
         for (let sceneObject of this.ParentSimState.Objects) {
-            if (!sceneObject instanceof Portal) {
+            if (!(sceneObject instanceof Portal)) {
                 continue;
             }
 
@@ -87,11 +87,14 @@ class ValidateTeleport extends SimEvent {
                 this.bSuccess = true;
                 break;
             }
+
         }
 
         if (!this.bSuccess) {
             this.ParentSimState.Fail("Didn't use teleport. DEATH");
+            return;
         }
+        this.ParentSimState.bUseInput = false;
     }
     TickImpl() {
         if (this.bSuccess) {
@@ -101,12 +104,13 @@ class ValidateTeleport extends SimEvent {
     }
     OnEnd() {
         for (let object of this.ParentSimState.Objects) {
-            if (!object instanceof Portal) {
+            if (!(object instanceof Portal)) {
                 continue;
             }
 
             object.SetVisibility(false);
         }
+        this.ParentSimState.bUseInput = true;
     }
 }
 
@@ -126,7 +130,7 @@ class CastEvent extends SimEvent{
 class ShowFieldObjects extends CastEvent{
     OnEnd(){
         for (let sceneObject of this.ParentSimState.Objects) {
-            if (!sceneObject instanceof Portal) {
+            if (!(sceneObject instanceof Portal)) {
                 continue;
             }
 
@@ -143,7 +147,7 @@ class ShowMechanics extends CastEvent {
     OnEnd(){
         this.ParentSimState.Player.SetPortalVisibility(true);
         for (let sceneObject of this.ParentSimState.Objects) {
-            if (!sceneObject instanceof Portal) {
+            if (!(sceneObject instanceof Portal)) {
                 continue;
             }
 
@@ -153,7 +157,15 @@ class ShowMechanics extends CastEvent {
 }
 
 class ActivateDeathZones extends CastEvent {
+    OnEnd(){
+        for (let sceneObject of this.ParentSimState.Objects) {
+            if (!(sceneObject instanceof Rectangle)) {
+                continue;
+            }
 
+            sceneObject.SetVisibility(true);
+        }
+    }
 }
 
 class ApplyStatus extends SimEvent {
@@ -179,6 +191,39 @@ class Cleave extends ApplyStatus{
 
 }
 
+class ShowBots extends ApplyStatus{
+    constructor(startTime, duration, parentSimState,playerBait){
+        super(startTime, duration, parentSimState);
+        this.PlayerBait = playerBait;
+    }
+    OnStart(){
+        let pos = 0;
+        let positions = [];
+        let PlayerPosition = this.ParentSimState.Scenario[this.PlayerBait];
+        for (const position in BaitPositionCalls) {
+            if (Object.hasOwnProperty.call(BaitPositionCalls, position)) {
+                positions.push(BaitPositionCalls[position]);
+            }
+        }
+
+        for (let Bot of this.ParentSimState.Bots) {
+            Bot.SetVisibility(true);
+            if(positions[pos] === PlayerPosition){
+                pos+=1;
+            }
+            Bot.Teleport(BaitPositions[positions[pos]]);
+            pos+=1;
+        }
+    }
+    OnEnd(){
+        for (let Bot of this.ParentSimState.Bots) {
+            Bot.SetVisibility(false);
+        }
+    }
+}
+
+
+
 class UsePlayerTeleport extends SimEvent {
     OnStart(){
         let playerPos = this.ParentSimState.Player.Position;
@@ -187,6 +232,7 @@ class UsePlayerTeleport extends SimEvent {
         this.EndPos = this.StartPos.Add(offset);
         this.PortalStartPos = this.ParentSimState.Player.PersonalPortal.Position.Multiply(1);
         this.PortalEndPos = this.ParentSimState.Player.PersonalPortal.Position.Subtract(offset);
+        this.ParentSimState.bUsinput = false;
     }
     TickImpl(){
         let timeParam = Math.min(Math.max(this.TimePassed / this.Duration, 0), 1);
@@ -195,5 +241,24 @@ class UsePlayerTeleport extends SimEvent {
     }
     OnEnd(){
         this.ParentSimState.Player.SetPortalVisibility(false);
+        this.ParentSimState.bUsinput = true;
+    }
+}
+
+class Win extends SimEvent {
+    OnStart(){
+        for (let sceneObject of this.ParentSimState.Objects) {
+            sceneObject.SetVisibility(false);
+        }
+
+        let YouWin = document.createElement("div");
+        YouWin.textContent = "YOU WIN";
+        YouWin.style.fontFamily = "sans-serif"
+        YouWin.style.fontSize = "9em"
+        YouWin.style.position = "fixed"
+        YouWin.style.transform = "translate(-50%, -50%)"
+        YouWin.style.left = "50%"
+        YouWin.style.top = "50%"
+        GetObjectContainer().appendChild(YouWin);
     }
 }
